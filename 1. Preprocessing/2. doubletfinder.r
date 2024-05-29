@@ -5,62 +5,63 @@ library(BiocParallel) # install using Biocmanager
 library(Matrix) # for read .npz file
 
 
-# Python module 임포트
-library(reticulate)
-np <- import("numpy")
-
 # seed setting
-set.seed(42)
+set.seed(123)
 
+# remove all objects in the environment
+rm(list = ls())
 
-# .npz 파일 읽기
+# load data from python
 getwd()
-npz <- np$load("./1. Preprocessing/sparse_matrix.npz")
-
-# Sparse matrix의 구성 요소 추출
-data <- npz$f[["data"]]
-indices <- npz$f[["indices"]]
-indptr <- npz$f[["indptr"]]
-shape <- npz$f[["shape"]]
-
-
-# 행 인덱스를 생성 (0-based to 1-based)
-row_indices <- integer(length(data))
-for (i in seq_along(indptr)[-length(indptr)]) {
-  start_idx <- indptr[i] + 1
-  end_idx <- indptr[i + 1]
-  row_indices[start_idx:(end_idx - 1)] <- i
-}
-row_indices <- row_indices + 1
-
-# 열 인덱스를 생성 (0-based to 1-based)
-col_indices <- indices + 1
+normal_1_t <- readRDS("./file_to_r/normal_1_t.rds")
+normal_2_t <- readRDS("./file_to_r/normal_2_t.rds")
+normal_3_t <- readRDS("./file_to_r/normal_3_t.rds")
+hiv_1_t <- readRDS("./file_to_r/hiv_1_t.rds")
+hiv_2_t <- readRDS("./file_to_r/hiv_2_t.rds")
+hiv_3_t <- readRDS("./file_to_r/hiv_3_t.rds")
 
 
+# Run scDblFinder
+normal_1_dbl <- scDblFinder(SingleCellExperiment(list(counts = normal_1_t)))
+normal_2_dbl <- scDblFinder(SingleCellExperiment(list(counts = normal_2_t)))
+normal_3_dbl <- scDblFinder(SingleCellExperiment(list(counts = normal_3_t)))
+hiv_1_dbl <- scDblFinder(SingleCellExperiment(list(counts = hiv_1_t)))
+hiv_2_dbl <- scDblFinder(SingleCellExperiment(list(counts = hiv_2_t)))
+hiv_3_dbl <- scDblFinder(SingleCellExperiment(list(counts = hiv_3_t)))
 
-sparse_matrix <- sparseMatrix(i = row_indices,
-                              j = col_indices,
-                              x = data,
-                              dims = c(max(row_indices), max(col_indices)))
-sparse_df <- as.data.frame(as.matrix(sparse_matrix))
 
-data
+# Extract doublet scores and classes
+normal_1_dbl_score <- normal_1_dbl$scDblFinder.score
+normal_1_dbl_class <- normal_1_dbl$scDblFinder.class
+normal_2_dbl_score <- normal_2_dbl$scDblFinder.score
+normal_2_dbl_class <- normal_2_dbl$scDblFinder.class
+normal_3_dbl_score <- normal_3_dbl$scDblFinder.score
+normal_3_dbl_class <- normal_3_dbl$scDblFinder.class
+hiv_1_dbl_score <- hiv_1_dbl$scDblFinder.score
+hiv_1_dbl_class <- hiv_1_dbl$scDblFinder.class
+hiv_2_dbl_score <- hiv_2_dbl$scDblFinder.score
+hiv_2_dbl_class <- hiv_2_dbl$scDblFinder.class
+hiv_3_dbl_score <- hiv_3_dbl$scDblFinder.score
+hiv_3_dbl_class <- hiv_3_dbl$scDblFinder.class
 
 
-# read data
-data <- scDblFinder(
-  SingleCellExperiment(list(counts = normal_1))
-)
-
-View(normal_1)
-
-?scDblFinder
-?SingleCellExperiment
-
-doublet_score <- data$scDblFinder.score
-doublet_class <- data$scDblFinder.class
+mode(normal_1_dbl_score)
+mode(hiv_1_dbl_score)
 
 
 
+# Save the results
+saveRDS(normal_1_dbl_score, "./file_to_py/normal_1_dbl_score.rds")
+saveRDS(normal_1_dbl_class, "./file_to_py/normal_1_dbl_class.rds")
+saveRDS(normal_2_dbl_score, "./file_to_py/normal_2_dbl_score.rds")
+saveRDS(normal_2_dbl_class, "./file_to_py/normal_2_dbl_class.rds")
+saveRDS(normal_3_dbl_score, "./file_to_py/normal_3_dbl_score.rds")
+saveRDS(normal_3_dbl_class, "./file_to_py/normal_3_dbl_class.rds")
+saveRDS(hiv_1_dbl_score, "./file_to_py/hiv_1_dbl_score.rds")
+saveRDS(hiv_1_dbl_class, "./file_to_py/hiv_1_dbl_class.rds")
+saveRDS(hiv_2_dbl_score, "./file_to_py/hiv_2_dbl_score.rds")
+saveRDS(hiv_2_dbl_class, "./file_to_py/hiv_2_dbl_class.rds")
+saveRDS(hiv_3_dbl_score, "./file_to_py/hiv_3_dbl_score.rds")
+saveRDS(hiv_3_dbl_class, "./file_to_py/hiv_3_dbl_class.rds")
 
-sparse_df <- read.csv("../file")
+rm(list = ls())
